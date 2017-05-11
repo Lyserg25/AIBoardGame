@@ -13,7 +13,7 @@ public class MyClient implements Callable<Void> {
     private String hostName;
     private String teamName;
     private BufferedImage logo;
-    private int[] points = {0, 0, 0,};
+    private Integer[] points = {0, 0, 0,};
     private Map<Integer, Integer> fieldBounds;
     protected int myPlayerNr;
 
@@ -53,7 +53,7 @@ public class MyClient implements Callable<Void> {
         Stack[][] field = new Stack[12][7];
 
         for (int y = 1; y < 7; y++) {
-            for (int x = (y == 0 ? 1 : 0); x < fieldBounds.get(y); x++) {
+            for (int x = (y == 6 ? 1 : 0); x < fieldBounds.get(y); x++) {
                 field[x][y] = new Stack();
             }
         }
@@ -92,11 +92,40 @@ public class MyClient implements Callable<Void> {
 
     protected Move calculateMove(Stack[][] field) {
         List<Move> possibleMoves = getPossibleMoves(field, myPlayerNr);
+        TreeNode<Configuration> root = new TreeNode<>(new Configuration(field, points, myPlayerNr, myPlayerNr));
+
+
         Random rnd = new Random();
         int randomNr = rnd.nextInt(possibleMoves.size());
 
         return possibleMoves.get(randomNr);
     }
+
+//    private int miniMax(TreeNode<Configuration> currentNode, int depth, int alpha, int beta) {
+//        if (depth <= 0 || currentNode.isLeafNode()) {
+//            return getHeuristic(currentNode.getState());
+//        }
+//        if (currentNode.getState().getCurrentPlayer().equals(selfColor)) {
+//            int currentAlpha = -INFINITY;
+//            for (GameTreeNode child : currentNode.getChildren()) {
+//                currentAlpha = Math.max(currentAlpha, miniMax(child, depth - 1, alpha, beta));
+//                alpha = Math.max(alpha, currentAlpha);
+//                if (alpha >= beta) {
+//                    return alpha;
+//                }
+//            }
+//            return currentAlpha;
+//        }
+//        int currentBeta = INFINITY;
+//        for (GameTreeNode child : currentNode.getChildren()) {
+//            currentBeta = Math.min(currentBeta, miniMax(child, depth - 1, alpha, beta));
+//            beta = Math.min(beta, currentBeta);
+//            if (beta <= alpha) {
+//                return beta;
+//            }
+//        }
+//        return currentBeta;
+//    }
 
     protected List<Move> getPossibleMoves(Stack[][] field, int playerNr) {
         List<Move> possibleMoves = new ArrayList<>();
@@ -179,7 +208,7 @@ public class MyClient implements Callable<Void> {
     private List<Position> getMovableChips(Stack[][] field, int playerNr) {
         List<Position> movableChips = new ArrayList<>();
         for (int y = 1; y < 7; y++) {
-            for (int x = (y == 0 ? 1 : 0); x < fieldBounds.get(y); x++) {
+            for (int x = (y == 6 ? 1 : 0); x < fieldBounds.get(y); x++) {
                 if (!field[x][y].isEmpty() && (playerNr == (int) field[x][y].peek())) {
                     movableChips.add(new Position(x, y));
                 }
@@ -196,6 +225,44 @@ public class MyClient implements Callable<Void> {
         public Position(int x, int y) {
             this.x = x;
             this.y = y;
+        }
+    }
+
+    private class Configuration {
+        public final Stack[][] field;
+        public final Integer[] points;
+        public final int myPlayerNr;
+        public final int turnPlayerNr;
+        public final int evaluationScore;
+
+        public Configuration(Stack[][] field, Integer[] points, int myPlayerNr, int turnPlayerNr) {
+            this.field = field;
+            this.points = points;
+            this.myPlayerNr = myPlayerNr;
+            this.turnPlayerNr = turnPlayerNr;
+            this.evaluationScore = evaluate();
+        }
+
+        private int evaluate() {
+
+            List<Integer> points = Arrays.asList(this.points);
+            int myPoints = points.remove(myPlayerNr);
+            int maxEnemyPoints = Collections.max(points);
+            return myPoints - maxEnemyPoints;
+        }
+
+        public boolean isGameFinished() {
+            for (int y = 1; y < 7; y++) {
+                for (int x = (y == 6 ? 1 : 0); x < fieldBounds.get(y); x++) {
+                    int playerNr = (int) field[x][y].peek();
+                    if ((playerNr == 0 && y == 6)
+                        ||(playerNr == 1 && x == fieldBounds.get(y))
+                            || (playerNr == 2 && x == (y == 6 ? 1 : 0))) {
+                        return true;
+                    }
+                }
+            }
+            return false;
         }
     }
 }
