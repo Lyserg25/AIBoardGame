@@ -36,6 +36,7 @@ public class MyClient implements Callable<Void> {
             while ((receivedMove = networkClient.receiveMove()) != null) {
                 moveChip(currentField, receivedMove);
             }
+            //TODO: timer thread needed in case calculation takes too much time
             calculatedMove = calculateMove(currentField);
             networkClient.sendMove(calculatedMove);
         }
@@ -91,24 +92,47 @@ public class MyClient implements Callable<Void> {
     }
 
     protected Move calculateMove(Stack[][] field) {
-        List<Move> possibleMoves = getPossibleMoves(field, myPlayerNr);
-        TreeNode<BoardConfiguration> root = new TreeNode<>(new BoardConfiguration(field, fieldBounds, points, myPlayerNr, myPlayerNr));
-
+        //TODO: tree might not be needed afterall
+//        TreeNode<BoardConfiguration> root = new TreeNode<>(new BoardConfiguration(field, fieldBounds, points, myPlayerNr, null, myPlayerNr));
+//        BoardConfiguration currentConfig = new BoardConfiguration(field, fieldBounds, points, myPlayerNr, null, myPlayerNr);
+//        List<Move> possibleMoves = getPossibleMoves(field, myPlayerNr);
+//        Move bestMove = null;
+//        double bestScore = Double.NEGATIVE_INFINITY;
+//
+//        for (Move possibleMove : possibleMoves) {
+//            BoardConfiguration possibleNewConfig = new BoardConfiguration(field, fieldBounds, points, myPlayerNr, possibleMove, myPlayerNr);
+//            double alpha = alphaBetaSearch(possibleNewConfig, 3, bestScore, Double.POSITIVE_INFINITY);
+//            if (alpha > bestScore || bestMove == null) {
+//                bestMove = possibleMove;
+//                bestScore = alpha;
+//            }
+//        }
+//        return bestMove;
 
         Random rnd = new Random();
+        List<Move> possibleMoves = getPossibleMoves(field, myPlayerNr);
         int randomNr = rnd.nextInt(possibleMoves.size());
-
         return possibleMoves.get(randomNr);
     }
 
-//    private int miniMax(TreeNode<BoardConfiguration> currentNode, int depth, int alpha, int beta) {
-//        if (depth <= 0 || currentNode.isLeafNode()) {
-//            return getHeuristic(currentNode.getState());
+    private int getCurrentPlayer(BoardConfiguration currentConfig) {
+        //TODO: check if there are still 3 players
+        if (currentConfig.getMovePlayerNr() == 2) {
+            return 0;
+        } else {
+            return currentConfig.getMovePlayerNr() + 1;
+        }
+    }
+
+//    private double alphaBetaSearch(BoardConfiguration currentConfig, int depth, double alpha, double beta) {
+//        //TODO: replace tree node children with boardconfigurations from getPossibleMoves()
+//        if (depth <= 0 || currentConfig.isFinishedGame()) {
+//            return currentConfig.getEvaluationScore();
 //        }
-//        if (currentNode.getState().getCurrentPlayer().equals(selfColor)) {
-//            int currentAlpha = -INFINITY;
-//            for (GameTreeNode child : currentNode.getChildren()) {
-//                currentAlpha = Math.max(currentAlpha, miniMax(child, depth - 1, alpha, beta));
+//        if (getCurrentPlayer(currentConfig) == myPlayerNr) {
+//            double currentAlpha = Double.NEGATIVE_INFINITY;
+//            for (TreeNode child : currentNode.getChildren()) {
+//                currentAlpha = Math.max(currentAlpha, alphaBetaSearch(child, depth--, alpha, beta));
 //                alpha = Math.max(alpha, currentAlpha);
 //                if (alpha >= beta) {
 //                    return alpha;
@@ -116,9 +140,9 @@ public class MyClient implements Callable<Void> {
 //            }
 //            return currentAlpha;
 //        }
-//        int currentBeta = INFINITY;
-//        for (GameTreeNode child : currentNode.getChildren()) {
-//            currentBeta = Math.min(currentBeta, miniMax(child, depth - 1, alpha, beta));
+//        double currentBeta = Double.POSITIVE_INFINITY;
+//        for (TreeNode child : currentNode.getChildren()) {
+//            currentBeta = Math.min(currentBeta, alphaBetaSearch(child, depth--, alpha, beta));
 //            beta = Math.min(beta, currentBeta);
 //            if (beta <= alpha) {
 //                return beta;

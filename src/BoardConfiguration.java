@@ -1,3 +1,5 @@
+import lenz.htw.bogapr.Move;
+
 import java.util.*;
 
 /**
@@ -8,15 +10,26 @@ public class BoardConfiguration {
     private Map<Integer, Integer> fieldBounds;
     private final Integer[] points;
     private final int myPlayerNr;
-    private final int turnPlayerNr;
+    private final Move move;
+    private final int movePlayerNr;
     private final double evaluationScore;
     private final boolean isFinishedGame;
 
-    public BoardConfiguration(Stack[][] field, Map<Integer, Integer> fieldBounds, Integer[] points, int myPlayerNr, int turnPlayerNr) {
+    /**
+     * Representation of a board configuration
+     * @param field the game field with the chips of each player
+     * @param fieldBounds the bounds of the field
+     * @param points points of each player
+     * @param myPlayerNr our player number
+     * @param move the last move that was made
+     * @param movePlayerNr the player number of the player that made the last move
+     */
+    public BoardConfiguration(Stack[][] field, Map<Integer, Integer> fieldBounds, Integer[] points, int myPlayerNr, Move move, int movePlayerNr) {
         this.field = field;
         this.fieldBounds = fieldBounds;
         this.myPlayerNr = myPlayerNr;
-        this.turnPlayerNr = turnPlayerNr;
+        this.move = move;
+        this.movePlayerNr = movePlayerNr;
         this.isFinishedGame = checkGameFinished();
         this.points = calcPoints(points);
         this.evaluationScore = evaluateConfiguration();
@@ -38,7 +51,7 @@ public class BoardConfiguration {
 
     private Integer[] calcPoints(Integer[] points) {
         if (isFinishedGame()) {
-            points[turnPlayerNr] += 5;
+            points[movePlayerNr] += 5;
         }
         return points;
     }
@@ -65,8 +78,10 @@ public class BoardConfiguration {
         return points;
     }
 
-    public int getTurnPlayerNr() {
-        return turnPlayerNr;
+    public Move getMove() { return move; }
+
+    public int getMovePlayerNr() {
+        return movePlayerNr;
     }
 
     public double getEvaluationScore() {
