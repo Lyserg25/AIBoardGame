@@ -101,12 +101,15 @@ public class MyClient implements Callable<Void> {
 
         for (Move possibleMove : possibleMoves) {
             BoardConfiguration possibleNewConfig = new BoardConfiguration(field, fieldBounds, points, myPlayerNr, possibleMove);
-            double alpha = alphaBetaSearch(possibleNewConfig, 3, bestScore, Double.POSITIVE_INFINITY);
+            double alpha = alphaBetaSearch(possibleNewConfig, 5, bestScore, Double.POSITIVE_INFINITY);
+            System.out.println("(" + possibleMove.fromX + "," + possibleMove.fromY + ") -> (" + possibleMove.toX + "," + possibleMove.toY + ") Score: " + alpha);
             if (alpha > bestScore || bestMove == null) {
                 bestMove = possibleMove;
                 bestScore = alpha;
             }
         }
+        System.out.println("best score: " + bestScore);
+        System.out.println("____________________________");
         return bestMove;
 
 //        Random rnd = new Random();
@@ -133,8 +136,9 @@ public class MyClient implements Callable<Void> {
 
         if (currentPlayer == myPlayerNr) {
             double currentAlpha = Double.NEGATIVE_INFINITY;
+            //TODO: best move first
             for (Move possibleMove : possibleMoves) {
-                BoardConfiguration possibleNewConfig = new BoardConfiguration(currentConfig.getField(), fieldBounds, points, myPlayerNr, possibleMove);
+                BoardConfiguration possibleNewConfig = new BoardConfiguration(currentConfig.getField(), fieldBounds, currentConfig.getPoints(), myPlayerNr, possibleMove);
                 currentAlpha = Math.max(currentAlpha, alphaBetaSearch(possibleNewConfig, depth - 1, alpha, beta));
                 alpha = Math.max(alpha, currentAlpha);
                 if (alpha >= beta) {
@@ -145,7 +149,7 @@ public class MyClient implements Callable<Void> {
         }
         double currentBeta = Double.POSITIVE_INFINITY;
         for (Move possibleMove : possibleMoves) {
-            BoardConfiguration possibleNewConfig = new BoardConfiguration(currentConfig.getField(), fieldBounds, points, myPlayerNr, possibleMove);
+            BoardConfiguration possibleNewConfig = new BoardConfiguration(currentConfig.getField(), fieldBounds, currentConfig.getPoints(), myPlayerNr, possibleMove);
             currentBeta = Math.min(currentBeta, alphaBetaSearch(possibleNewConfig, depth - 1, alpha, beta));
             beta = Math.min(beta, currentBeta);
             if (beta <= alpha) {

@@ -27,7 +27,7 @@ public class BoardConfiguration {
         this.fieldBounds = fieldBounds;
         this.field = copyField(field);
         this.move = move;
-        moveChip(points);
+        moveChip(Arrays.copyOf(points, points.length));
         this.myPlayerNr = myPlayerNr;
         this.evaluationScore = evaluateConfiguration();
     }
@@ -44,11 +44,7 @@ public class BoardConfiguration {
     }
 
     private void moveChip(Integer[] points) {
-        try {
-            this.movePlayerNr = (int) field[move.fromX][move.fromY].pop();
-        } catch (EmptyStackException e) {
-            e.printStackTrace();
-        }
+        this.movePlayerNr = (int) field[move.fromX][move.fromY].pop();
         Stack newPosition = field[move.toX][move.toY];
         boolean isFinishedGame = false;
 
