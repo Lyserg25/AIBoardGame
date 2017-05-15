@@ -6,14 +6,14 @@ import java.util.*;
  * Created by Wayne on 12.05.2017.
  */
 public class BoardConfiguration {
-    private final Stack[][] field;
+    private Stack[][] field;
     private Map<Integer, Integer> fieldBounds;
-    private final Integer[] points;
+    private Integer[] points;
     private final int myPlayerNr;
     private final Move move;
-    private final int movePlayerNr;
+    private int movePlayerNr;
     private final double evaluationScore;
-    private final boolean isFinishedGame;
+    private boolean isFinishedGame;
 
     /**
      * Representation of a board configuration
@@ -22,42 +22,52 @@ public class BoardConfiguration {
      * @param points points of each player
      * @param myPlayerNr our player number
      * @param move the last move that was made
-     * @param movePlayerNr the player number of the player that made the last move
      */
-    public BoardConfiguration(Stack[][] field, Map<Integer, Integer> fieldBounds, Integer[] points, int myPlayerNr, Move move, int movePlayerNr) {
-        this.field = field;
+    public BoardConfiguration(Stack[][] field, Map<Integer, Integer> fieldBounds, Integer[] points, int myPlayerNr, Move move) {
         this.fieldBounds = fieldBounds;
-        this.myPlayerNr = myPlayerNr;
+        this.field = copyField(field);
         this.move = move;
-        this.movePlayerNr = movePlayerNr;
-        this.isFinishedGame = checkGameFinished();
-        this.points = calcPoints(points);
+        moveChip(points);
+        this.myPlayerNr = myPlayerNr;
         this.evaluationScore = evaluateConfiguration();
     }
 
-    private boolean checkGameFinished() {
+    private Stack[][] copyField(Stack[][] field) {
+        Stack[][] copy = new Stack[12][7];
+
         for (int y = 1; y < 7; y++) {
             for (int x = (y == 6 ? 1 : 0); x < fieldBounds.get(y); x++) {
-                int playerNr = (int) field[x][y].peek();
-                if ((playerNr == 0 && y == 6)
-                        || (playerNr == 1 && x == fieldBounds.get(y))
-                        || (playerNr == 2 && x == (y == 6 ? 1 : 0))) {
-                    return true;
-                }
+                copy[x][y] = (Stack) field[x][y].clone();
             }
         }
-        return false;
+        return copy;
     }
 
-    private Integer[] calcPoints(Integer[] points) {
-        if (isFinishedGame()) {
-            points[movePlayerNr] += 5;
+    private void moveChip(Integer[] points) {
+        try {
+            this.movePlayerNr = (int) field[move.fromX][move.fromY].pop();
+        } catch (EmptyStackException e) {
+            e.printStackTrace();
         }
-        return points;
+        Stack newPosition = field[move.toX][move.toY];
+        boolean isFinishedGame = false;
+
+        if (!newPosition.isEmpty() && (movePlayerNr != (int) newPosition.peek())) {
+            points[movePlayerNr]++;
+        }
+        if ((movePlayerNr == 0 && move.toY == 6)
+                || (movePlayerNr == 1 && move.toX == fieldBounds.get(move.toY))
+                || (movePlayerNr == 2 && move.toX == (move.toY == 6 ? 1 : 0))) {
+            points[movePlayerNr] += 5;
+            isFinishedGame = true;
+        }
+        newPosition.push(movePlayerNr);
+        this.isFinishedGame = isFinishedGame;
+        this.points = points;
     }
 
     private double evaluateConfiguration() {
-        List<Integer> points = Arrays.asList(this.points);
+        List<Integer> points = new LinkedList<>(Arrays.asList(this.points));
 
         if (isFinishedGame() && points.get(myPlayerNr) == Collections.max(points)) {
             return Double.POSITIVE_INFINITY;
