@@ -16,6 +16,7 @@ public class MyClient implements Callable<Void> {
     private Integer[] points = {0, 0, 0,};
     private Map<Integer, Integer> fieldBounds;
     protected int myPlayerNr;
+    private Move bestMove;
 
     public MyClient(String hostname, String teamName, BufferedImage logo) {
         this.hostName = hostname;
@@ -31,15 +32,25 @@ public class MyClient implements Callable<Void> {
         Stack[][] currentField = initField();
         NetworkClient networkClient = new NetworkClient(hostName, teamName, logo);
         myPlayerNr = networkClient.getMyPlayerNumber();
+        int calculationTime = networkClient.getTimeLimitInSeconds() * 1000 - networkClient.getExpectedNetworkLatencyInMilliseconds() - 200;
+        Timer timer = new Timer();
 
         for (; ; ) {
             while ((receivedMove = networkClient.receiveMove()) != null) {
                 moveChip(currentField, receivedMove);
             }
-            //TODO: timer thread needed in case calculation takes too much time
+            timer.schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    networkClient.sendMove(getCurrentBestMove());
+                }
+            }, calculationTime);
             calculatedMove = calculateMove(currentField);
-            networkClient.sendMove(calculatedMove);
         }
+    }
+
+    protected Move getCurrentBestMove() {
+        return bestMove;
     }
 
     protected void initFieldBounds() {
@@ -92,11 +103,8 @@ public class MyClient implements Callable<Void> {
     }
 
     protected Move calculateMove(Stack[][] field) {
-        //TODO: tree might not be needed afterall
-        //TreeNode<BoardConfiguration> root = new TreeNode<>(new BoardConfiguration(field, fieldBounds, points, myPlayerNr, null));
-        //BoardConfiguration currentConfig = new BoardConfiguration(field, fieldBounds, points, myPlayerNr, null);
         List<Move> possibleMoves = getPossibleMoves(field, myPlayerNr);
-        Move bestMove = null;
+        bestMove = null;
         double bestScore = Double.NEGATIVE_INFINITY;
 
         for (Move possibleMove : possibleMoves) {
