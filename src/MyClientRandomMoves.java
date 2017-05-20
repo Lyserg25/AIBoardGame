@@ -37,6 +37,7 @@ public class MyClientRandomMoves implements Callable<Void> {
                 moveChip(currentField, receivedMove);
             }
             calculatedMove = calculateMove(currentField);
+            //calculatedMove = new Move(1, 1,1, 1);
             networkClient.sendMove(calculatedMove);
         }
     }
