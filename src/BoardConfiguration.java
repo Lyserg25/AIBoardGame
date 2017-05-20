@@ -17,18 +17,23 @@ public class BoardConfiguration {
 
     /**
      * Representation of a board configuration
-     * @param field the game field with the chips of each player
+     *
+     * @param field       the game field with the chips of each player
      * @param fieldBounds the bounds of the field
-     * @param points points of each player
-     * @param myPlayerNr our player number
-     * @param move the last move that was made
+     * @param points      points of each player
+     * @param myPlayerNr  our player number
+     * @param move        the last move that was made
      */
     public BoardConfiguration(Stack[][] field, Map<Integer, Integer> fieldBounds, Integer[] points, int myPlayerNr, Move move) {
         this.fieldBounds = fieldBounds;
         this.field = copyField(field);
-        this.move = move;
-        moveChip(Arrays.copyOf(points, points.length));
         this.myPlayerNr = myPlayerNr;
+        this.move = move;
+        if (move != null) {
+            moveChip(Arrays.copyOf(points, points.length));
+        } else {
+            this.points = points;
+        }
         this.evaluationScore = evaluateConfiguration();
     }
 
@@ -84,7 +89,9 @@ public class BoardConfiguration {
         return points;
     }
 
-    public Move getMove() { return move; }
+    public Move getMove() {
+        return move;
+    }
 
     public int getMovePlayerNr() {
         return movePlayerNr;

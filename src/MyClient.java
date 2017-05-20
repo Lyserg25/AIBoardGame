@@ -17,6 +17,7 @@ public class MyClient implements Callable<Void> {
     private Map<Integer, Integer> fieldBounds;
     protected int myPlayerNr;
     private Move bestMove;
+    private boolean stopCalculation;
 
     public MyClient(String hostname, String teamName, BufferedImage logo) {
         this.hostName = hostname;
@@ -39,13 +40,19 @@ public class MyClient implements Callable<Void> {
             while ((receivedMove = networkClient.receiveMove()) != null) {
                 moveChip(currentField, receivedMove);
             }
+            stopCalculation = false;
+            System.out.println("Start");
+            long start = System.currentTimeMillis();
             timer.schedule(new TimerTask() {
                 @Override
                 public void run() {
+                    System.out.println(" time: " + (System.currentTimeMillis() - start));
                     networkClient.sendMove(getCurrentBestMove());
+                    stopCalculation = true;
                 }
             }, calculationTime);
             calculatedMove = calculateMove(currentField);
+            //networkClient.sendMove(calculatedMove);
         }
     }
 
@@ -103,20 +110,32 @@ public class MyClient implements Callable<Void> {
     }
 
     protected Move calculateMove(Stack[][] field) {
-        List<Move> possibleMoves = getPossibleMoves(field, myPlayerNr);
-        bestMove = null;
+        //List<Move> possibleMoves = getPossibleMoves(field, myPlayerNr);
+        BoardConfiguration currentConfig = new BoardConfiguration(field, fieldBounds, points, myPlayerNr, null);
+        List<BoardConfiguration> possibleNewConfigs = getPossibleMoves(currentConfig, myPlayerNr);
+        Collections.reverse(possibleNewConfigs);
         double bestScore = Double.NEGATIVE_INFINITY;
+        bestMove = null;
 
-        for (Move possibleMove : possibleMoves) {
-            BoardConfiguration possibleNewConfig = new BoardConfiguration(field, fieldBounds, points, myPlayerNr, possibleMove);
-            double alpha = alphaBetaSearch(possibleNewConfig, 5, bestScore, Double.POSITIVE_INFINITY);
-            System.out.println("(" + possibleMove.fromX + "," + possibleMove.fromY + ") -> (" + possibleMove.toX + "," + possibleMove.toY + ") Score: " + alpha);
-            if (alpha > bestScore || bestMove == null) {
-                bestMove = possibleMove;
+        for (BoardConfiguration possibleNewConfig : possibleNewConfigs) {
+            System.out.println(possibleNewConfig.getEvaluationScore());
+        }
+
+        for (BoardConfiguration possibleNewConfig : possibleNewConfigs) {
+            if (stopCalculation) break;
+            if (bestMove == null) {
+                bestMove = possibleNewConfig.getMove();
+            }
+            //System.out.println(possibleNewConfig.getEvaluationScore());
+            double alpha = alphaBetaSearch(possibleNewConfig, 3, bestScore, Double.POSITIVE_INFINITY);
+            //System.out.println("(" + possibleMove.fromX + "," + possibleMove.fromY + ") -> (" + possibleMove.toX + "," + possibleMove.toY + ") Score: " + alpha);
+            if (alpha > bestScore) {
+                bestMove = possibleNewConfig.getMove();
+                System.out.println("move");
                 bestScore = alpha;
             }
         }
-        System.out.println("best score: " + bestScore);
+        //System.out.println("best score: " + bestScore);
         System.out.println("____________________________");
         return bestMove;
 
@@ -124,6 +143,16 @@ public class MyClient implements Callable<Void> {
 //        List<Move> possibleMoves = getPossibleMoves(field, myPlayerNr);
 //        int randomNr = rnd.nextInt(possibleMoves.size());
 //        return possibleMoves.get(randomNr);
+    }
+
+
+    private List<BoardConfiguration> createBoardConfigurations(List<Move> possibleMoves, BoardConfiguration currentConfig) {
+        List<BoardConfiguration> possibleNewConfigs = new ArrayList<>();
+        for (Move possibleMove : possibleMoves) {
+            possibleNewConfigs.add(new BoardConfiguration(currentConfig.getField(), fieldBounds, currentConfig.getPoints(), myPlayerNr, possibleMove));
+        }
+        possibleNewConfigs.sort(new BoardConfigComparator());
+        return possibleNewConfigs;
     }
 
     private int getCurrentPlayer(BoardConfiguration currentConfig) {
@@ -140,13 +169,16 @@ public class MyClient implements Callable<Void> {
             return currentConfig.getEvaluationScore();
         }
         int currentPlayer = getCurrentPlayer(currentConfig);
-        List<Move> possibleMoves = getPossibleMoves(currentConfig.getField(), currentPlayer);
+        //List<Move> possibleMoves = getPossibleMoves(currentConfig.getField(), currentPlayer);
+        //List<BoardConfiguration> possibleNewConfigs = createBoardConfigurations(possibleMoves, currentConfig);
+        List<BoardConfiguration> possibleNewConfigs = getPossibleMoves(currentConfig, currentPlayer);
 
         if (currentPlayer == myPlayerNr) {
             double currentAlpha = Double.NEGATIVE_INFINITY;
-            //TODO: best move first
-            for (Move possibleMove : possibleMoves) {
-                BoardConfiguration possibleNewConfig = new BoardConfiguration(currentConfig.getField(), fieldBounds, currentConfig.getPoints(), myPlayerNr, possibleMove);
+            Collections.reverse(possibleNewConfigs);
+
+            for (BoardConfiguration possibleNewConfig : possibleNewConfigs) {
+                if (stopCalculation) break;
                 currentAlpha = Math.max(currentAlpha, alphaBetaSearch(possibleNewConfig, depth - 1, alpha, beta));
                 alpha = Math.max(alpha, currentAlpha);
                 if (alpha >= beta) {
@@ -156,8 +188,8 @@ public class MyClient implements Callable<Void> {
             return currentAlpha;
         }
         double currentBeta = Double.POSITIVE_INFINITY;
-        for (Move possibleMove : possibleMoves) {
-            BoardConfiguration possibleNewConfig = new BoardConfiguration(currentConfig.getField(), fieldBounds, currentConfig.getPoints(), myPlayerNr, possibleMove);
+        for (BoardConfiguration possibleNewConfig : possibleNewConfigs) {
+            if (stopCalculation) break;
             currentBeta = Math.min(currentBeta, alphaBetaSearch(possibleNewConfig, depth - 1, alpha, beta));
             beta = Math.min(beta, currentBeta);
             if (beta <= alpha) {
@@ -167,16 +199,30 @@ public class MyClient implements Callable<Void> {
         return currentBeta;
     }
 
-    protected List<Move> getPossibleMoves(Stack[][] field, int playerNr) {
+    protected List<BoardConfiguration> getPossibleMoves(BoardConfiguration currentConfig, int playerNr) {
+        List<BoardConfiguration> possibleNewConfigs = new ArrayList<>();
         List<Move> possibleMoves = new ArrayList<>();
-        List<Position> movableChipPositions = getMovableChips(field, playerNr);
+        List<Position> movableChipPositions = getMovableChips(currentConfig.getField(), playerNr);
 
         for (Position movableChipPosition : movableChipPositions) {
-            possibleMoves.addAll(getPossibleMovesFromPosition(movableChipPosition, field));
+            possibleMoves.addAll(getPossibleMovesFromPosition(movableChipPosition, currentConfig.getField()));
         }
-
-        return possibleMoves;
+        for (Move possibleMove : possibleMoves) {
+            possibleNewConfigs.add(new BoardConfiguration(currentConfig.getField(), fieldBounds, currentConfig.getPoints(), myPlayerNr, possibleMove));
+        }
+        possibleNewConfigs.sort(new BoardConfigComparator());
+        return possibleNewConfigs;
     }
+//    protected List<Move> getPossibleMoves(Stack[][] field, int playerNr) {
+//        List<Move> possibleMoves = new ArrayList<>();
+//        List<Position> movableChipPositions = getMovableChips(field, playerNr);
+//
+//        for (Position movableChipPosition : movableChipPositions) {
+//            possibleMoves.addAll(getPossibleMovesFromPosition(movableChipPosition, field));
+//        }
+//
+//        return possibleMoves;
+//    }
 
     private Set<Move> getPossibleMovesFromPosition(Position startingPos, Stack[][] field) {
         Set<Move> possibleMoves = new HashSet<>();
@@ -265,6 +311,13 @@ public class MyClient implements Callable<Void> {
         public Position(int x, int y) {
             this.x = x;
             this.y = y;
+        }
+    }
+
+    private class BoardConfigComparator implements Comparator<BoardConfiguration> {
+        @Override
+        public int compare(BoardConfiguration config1, BoardConfiguration config2) {
+            return Double.compare(config1.getEvaluationScore(), config2.getEvaluationScore());
         }
     }
 }
