@@ -34,7 +34,7 @@ public class MyClient implements Callable<Void> {
         Stack[][] currentField = initField();
         NetworkClient networkClient = new NetworkClient(hostName, teamName, logo);
         myPlayerNr = networkClient.getMyPlayerNumber();
-        int calculationTime = networkClient.getTimeLimitInSeconds() * 1000 - networkClient.getExpectedNetworkLatencyInMilliseconds() - 200;
+        int calculationTime = networkClient.getTimeLimitInSeconds() * 1000 - networkClient.getExpectedNetworkLatencyInMilliseconds() - 300;
         Timer timer = new Timer();
         players = new ArrayList<>();
         for (int i = 0; i < 3; i++){

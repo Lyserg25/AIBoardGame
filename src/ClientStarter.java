@@ -13,7 +13,7 @@ import java.util.concurrent.Executors;
  */
 public class ClientStarter {
     private static final String HOST_NAME = null;
-    private static final String[] TEAM_NAME = {"Lyserg25", "Grillhaehnsche", "MrKitty",};
+    private static final String[] TEAM_NAME = {"Lyserg25", "Coastinger", "MrKitty",};
     private static final String[] LOGO_PATH = {"src/resources/logo.png", "src/resources/patrick.png", "src/resources/mushroom.png"};
 
     /* start server:
