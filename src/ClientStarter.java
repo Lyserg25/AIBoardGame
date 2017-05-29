@@ -12,9 +12,9 @@ import java.util.concurrent.Executors;
  * Created by Wayne on 14.04.2017.
  */
 public class ClientStarter {
-    private static final String HOST_NAME = null;
-    private static final String[] TEAM_NAME = {"Lyserg25", "Coastinger", "MrKitty",};
-    private static final String[] LOGO_PATH = {"src/resources/logo.png", "src/resources/patrick.png", "src/resources/mushroom.png"};
+    private static final String HOST_NAME = "141.45.214.64";
+    private static final String[] TEAM_NAME = {"Unknown", "Coastinger", "Lyserg25",};
+    private static final String[] LOGO_PATH = {"src/patrick.png", "src/resources/patrick.png", "src/resources/mushroom.png"};
 
     /* start server:
      * cd "C:\Users\Wayne\IdeaProjects\BoardGame\server"
@@ -52,9 +52,10 @@ public class ClientStarter {
             e.printStackTrace();
         }
         clients.add(new MyClient(HOST_NAME, TEAM_NAME[0], logo));
-
+        ExecutorService executor = Executors.newFixedThreadPool(1);
+        /*
         ExecutorService executor = Executors.newFixedThreadPool(3);
-        for (int i = 1; i < 3; i++) {
+        for (int i = 1; i < 1; i++) {
             logo = new BufferedImage(256, 256, BufferedImage.TYPE_4BYTE_ABGR);
             try {
                 logo = ImageIO.read(new File(LOGO_PATH[i]));
@@ -63,6 +64,7 @@ public class ClientStarter {
             }
             clients.add(new MyClientRandomMoves(HOST_NAME, TEAM_NAME[i], logo));
         }
+        */
         try {
             executor.invokeAll(clients);
         } catch (InterruptedException e) {

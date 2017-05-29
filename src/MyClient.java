@@ -132,11 +132,14 @@ public class MyClient implements Callable<Void> {
 //        }
 
         for (BoardConfiguration possibleNewConfig : possibleNewConfigs) {
-            if (stopCalculation) break;
+            if (stopCalculation){
+            	//System.out.println("BREAK best score: " + bestScore);
+            	break;
+            }
             if (bestMove == null) {
                 bestMove = possibleNewConfig.getMove();
             }
-            double alpha = alphaBetaSearch(possibleNewConfig, 3, bestScore, Double.POSITIVE_INFINITY);
+            double alpha = alphaBetaSearch(possibleNewConfig, 5, bestScore, Double.POSITIVE_INFINITY);
             //System.out.println("(" + possibleMove.fromX + "," + possibleMove.fromY + ") -> (" + possibleMove.toX + "," + possibleMove.toY + ") Score: " + alpha);
             if (alpha > bestScore) {
                 bestMove = possibleNewConfig.getMove();
@@ -173,7 +176,10 @@ public class MyClient implements Callable<Void> {
             Collections.reverse(possibleNewConfigs);
 
             for (BoardConfiguration possibleNewConfig : possibleNewConfigs) {
-                if (stopCalculation) break;
+                if (stopCalculation){
+                	//System.out.println("BREAK in alpha beta");
+                	break;
+                }
                 currentAlpha = Math.max(currentAlpha, alphaBetaSearch(possibleNewConfig, depth - 1, alpha, beta));
                 alpha = Math.max(alpha, currentAlpha);
                 if (alpha >= beta) {
